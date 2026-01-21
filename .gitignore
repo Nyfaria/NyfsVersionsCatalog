@@ -19,3 +19,8 @@ gradle-app.setting
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+.idea/copilot.data.migration.ask2agent.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/NyfsVersionsCatalog.iml
+.idea/vcs.xml
