@@ -17,7 +17,7 @@
   },
 
   "libraries": {
-    "config-api-common": { "group": "fuzs.forgeconfigapiport", "artifact": "forgeconfigapiport-common", "version": "config_api" },
+    "config-api-common": { "group": "fuzs.forgeconfigapiport", "artifact": "forgeconfigapiport-common-neoforgeapi", "version": "config_api" },
     "config-api-fabric": { "group": "fuzs.forgeconfigapiport", "artifact": "forgeconfigapiport-fabric", "version": "config_api" },
     "config-api-neoforge": { "group": "fuzs.forgeconfigapiport", "artifact": "forgeconfigapiport-neoforge", "version": "config_api" },
     "geckolib-common": { "group": "software.bernie.geckolib", "artifact": "geckolib-common-1.21.7", "version": "geckolib" },
