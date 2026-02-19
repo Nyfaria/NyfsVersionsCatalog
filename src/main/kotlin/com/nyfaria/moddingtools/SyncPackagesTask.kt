@@ -133,7 +133,7 @@ class PackageRefactorer(private val logger: org.gradle.api.logging.Logger) {
 
         val resourcesDir = File(moduleDir, "src/main/resources")
         if (resourcesDir.exists()) {
-            updateResourceFiles(resourcesDir, oldPackage, newPackage)
+            updateResourceFiles(resourcesDir, oldPackage, newPackage, oldModId, newModId)
         }
 
         if (oldModId != newModId) {
@@ -358,7 +358,7 @@ class PackageRefactorer(private val logger: org.gradle.api.logging.Logger) {
         cleanupEmptyDirectories(srcDir, oldGroup.replace('.', File.separatorChar))
     }
 
-    private fun updateResourceFiles(resourcesDir: File, oldPackage: String, newPackage: String) {
+    private fun updateResourceFiles(resourcesDir: File, oldPackage: String, newPackage: String, oldModId: String, newModId: String) {
         resourcesDir.walkTopDown()
             .maxDepth(10)
             .onEnter { !java.nio.file.Files.isSymbolicLink(it.toPath()) }
@@ -371,6 +371,74 @@ class PackageRefactorer(private val logger: org.gradle.api.logging.Logger) {
                 content = content.replace(oldPackage, newPackage)
                 file.writeText(content)
                 logger.lifecycle("[ModdingTools] Updated resource: ${file.name}")
+            }
+        }
+
+        updateServiceFiles(resourcesDir, oldPackage, newPackage)
+        renameMixinFiles(resourcesDir, oldModId, newModId)
+        renameAssetAndDataFolders(resourcesDir, oldModId, newModId)
+    }
+
+    private fun renameMixinFiles(resourcesDir: File, oldModId: String, newModId: String) {
+        if (oldModId == newModId) return
+
+        resourcesDir.listFiles()?.filter {
+            it.isFile && it.name.endsWith(".mixins.json") && it.name.contains(oldModId)
+        }?.forEach { mixinFile ->
+            val newFileName = mixinFile.name.replace(oldModId, newModId)
+            val newFile = File(resourcesDir, newFileName)
+            mixinFile.renameTo(newFile)
+            logger.lifecycle("[ModdingTools] Renamed mixin file: ${mixinFile.name} -> $newFileName")
+        }
+    }
+
+    private fun renameAssetAndDataFolders(resourcesDir: File, oldModId: String, newModId: String) {
+        if (oldModId == newModId) return
+
+        listOf("assets", "data").forEach { folderName ->
+            val parentDir = File(resourcesDir, folderName)
+            if (!parentDir.exists() || !parentDir.isDirectory) return@forEach
+
+            val oldModDir = File(parentDir, oldModId)
+            if (oldModDir.exists() && oldModDir.isDirectory) {
+                val newModDir = File(parentDir, newModId)
+                if (oldModDir.renameTo(newModDir)) {
+                    logger.lifecycle("[ModdingTools] Renamed $folderName folder: $oldModId -> $newModId")
+                } else {
+                    oldModDir.copyRecursively(newModDir, overwrite = true)
+                    oldModDir.deleteRecursively()
+                    logger.lifecycle("[ModdingTools] Renamed $folderName folder: $oldModId -> $newModId")
+                }
+            }
+        }
+    }
+
+    private fun updateServiceFiles(resourcesDir: File, oldPackage: String, newPackage: String) {
+        val servicesDir = File(resourcesDir, "META-INF/services")
+        if (!servicesDir.exists() || !servicesDir.isDirectory) return
+
+        servicesDir.listFiles()?.forEach { serviceFile ->
+            if (!serviceFile.isFile) return@forEach
+
+            var content = serviceFile.readText()
+            var contentModified = false
+            if (content.contains(oldPackage)) {
+                content = content.replace(oldPackage, newPackage)
+                serviceFile.writeText(content)
+                contentModified = true
+                logger.lifecycle("[ModdingTools] Updated service file content: ${serviceFile.name}")
+            }
+
+            if (serviceFile.name.contains(oldPackage)) {
+                val newFileName = serviceFile.name.replace(oldPackage, newPackage)
+                val newFile = File(servicesDir, newFileName)
+                if (contentModified) {
+                    newFile.writeText(content)
+                } else {
+                    serviceFile.copyTo(newFile, overwrite = true)
+                }
+                serviceFile.delete()
+                logger.lifecycle("[ModdingTools] Renamed service file: ${serviceFile.name} -> $newFileName")
             }
         }
     }
