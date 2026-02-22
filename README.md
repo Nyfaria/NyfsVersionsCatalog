@@ -4,6 +4,28 @@ Modding Tools Plugin for Nyfaria's Mods
 ## Overview
 This repository provides a Gradle plugin with modding tools for managing dependencies across Nyfaria's mods. Using Gradle's version catalog feature provides type-safe dependency management, consistent versioning, and easier maintenance.
 
+## Remote Version Updates
+The plugin automatically fetches the latest version definitions from GitHub, so you don't need to update the plugin to get new library versions. Version data is:
+- Fetched from `https://github.com/Nyfaria/NyfsModdingTools/tree/main/versions` by default
+- Cached locally for 24 hours in `~/.gradle/caches/nyfs-modding-tools/versions/`
+- Falls back to bundled versions if offline or the remote is unreachable
+
+To force a refresh of cached versions, delete the cache directory or wait for the 24-hour TTL to expire.
+
+### Custom Versions URL
+You can host your own version definitions and configure the plugin to use them:
+
+```kotlin
+import com.nyfaria.moddingtools.MinecraftVersions
+
+MinecraftVersions.setVersionsUrl("https://raw.githubusercontent.com/YourUser/YourRepo/main/versions")
+```
+
+Set to `null` to reset to the default URL. The URL should point to a directory containing:
+- `_base.json` - Base version definitions
+- `index.txt` - List of supported Minecraft versions
+- `{version}.json` - Version-specific definitions (e.g., `1.21.1.json`)
+
 ## Usage
 
 ### 1. Add the Version Catalog to Your Project

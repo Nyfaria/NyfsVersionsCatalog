@@ -38,30 +38,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 }
 
 
-val generateVersionIndex by tasks.registering {
-    val versionsDir = file("versions")
-    val outputFile = layout.buildDirectory.file("generated-resources/versions/index.txt")
-
-    inputs.dir(versionsDir)
-    outputs.file(outputFile)
-
-    doLast {
-        val outFile = outputFile.get().asFile
-        outFile.parentFile.mkdirs()
-        val versions = versionsDir.listFiles { f -> f.extension == "json" }
-            ?.map { it.nameWithoutExtension }
-            ?.sorted()
-            ?: emptyList()
-        outFile.writeText(versions.joinToString("\n"))
-    }
-}
-
 tasks.named<Copy>("processResources") {
-    dependsOn(generateVersionIndex)
-    from("versions") {
-        into("versions")
-    }
-    from(layout.buildDirectory.dir("generated-resources"))
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
