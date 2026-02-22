@@ -37,10 +37,11 @@ object MinecraftVersions {
     private val versionsBaseUrl: String
         get() = customVersionsUrl ?: DEFAULT_VERSIONS_URL
 
-    private val cacheDir: File by lazy {
-        val urlHash = versionsBaseUrl.hashCode().toString(16)
-        File(System.getProperty("user.home"), ".gradle/caches/nyfs-modding-tools/versions/$urlHash").apply { mkdirs() }
-    }
+    private val cacheDir: File
+        get() {
+            val urlHash = versionsBaseUrl.hashCode().toString(16)
+            return File(System.getProperty("user.home"), ".gradle/caches/nyfs-modding-tools/versions/$urlHash").apply { mkdirs() }
+        }
     private val CACHE_TTL_MS = TimeUnit.HOURS.toMillis(24)
 
     fun setVersionsUrl(url: String?) {

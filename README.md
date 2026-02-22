@@ -173,10 +173,16 @@ The plugin fetches version definitions from GitHub, so you don't need to update 
 
 Host your own version definitions:
 
+**Kotlin (`settings.gradle.kts`):**
 ```kotlin
 import com.nyfaria.moddingtools.MinecraftVersions
 
 MinecraftVersions.setVersionsUrl("https://raw.githubusercontent.com/YourUser/YourRepo/main/versions")
+```
+
+**Groovy (`settings.gradle`):**
+```groovy
+com.nyfaria.moddingtools.MinecraftVersions.setVersionsUrl("https://raw.githubusercontent.com/YourUser/YourRepo/main/versions")
 ```
 
 Set to `null` to reset to default. Your URL should point to a directory containing:
@@ -186,8 +192,14 @@ Set to `null` to reset to default. Your URL should point to a directory containi
 
 ### Clear Cache
 
+**Kotlin:**
 ```kotlin
 MinecraftVersions.clearCache()
+```
+
+**Groovy:**
+```groovy
+com.nyfaria.moddingtools.MinecraftVersions.clearCache()
 ```
 
 Or delete `~/.gradle/caches/nyfs-modding-tools/versions/`
