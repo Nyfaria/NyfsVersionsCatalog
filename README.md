@@ -2,124 +2,119 @@
 Modding Tools Plugin for Nyfaria's Mods
 
 ## Overview
-This repository provides a Gradle plugin with modding tools for managing dependencies across Nyfaria's mods. Using Gradle's version catalog feature provides type-safe dependency management, consistent versioning, and easier maintenance.
+This Gradle plugin provides comprehensive tooling for Minecraft mod development:
+- **Version Catalog** - Automatic dependency management with pre-configured libraries, versions, and plugins for multiple Minecraft versions
+- **Automatic Repository Configuration** - All common modding Maven repositories pre-configured
+- **Package Refactoring** - Automatic and manual package renaming when changing mod ID or group
+- **Mod Dependencies** - Simplified dependency declaration with automatic metadata file modification
 
-## Remote Version Updates
-The plugin automatically fetches the latest version definitions from GitHub, so you don't need to update the plugin to get new library versions. Version data is:
-- Fetched from `https://github.com/Nyfaria/NyfsModdingTools/tree/main/versions` by default
-- Cached locally for 24 hours in `~/.gradle/caches/nyfs-modding-tools/versions/`
-- Falls back to bundled versions if offline or the remote is unreachable
+## Installation
 
-To force a refresh of cached versions, delete the cache directory or wait for the 24-hour TTL to expire.
-
-### Custom Versions URL
-You can host your own version definitions and configure the plugin to use them:
+In your `settings.gradle.kts`:
 
 ```kotlin
-import com.nyfaria.moddingtools.MinecraftVersions
-
-MinecraftVersions.setVersionsUrl("https://raw.githubusercontent.com/YourUser/YourRepo/main/versions")
-```
-
-Set to `null` to reset to the default URL. The URL should point to a directory containing:
-- `_base.json` - Base version definitions
-- `index.txt` - List of supported Minecraft versions
-- `{version}.json` - Version-specific definitions (e.g., `1.21.1.json`)
-
-## Usage
-
-### 1. Add the Version Catalog to Your Project
-
-In your `settings.gradle` or `settings.gradle.kts`, reference this catalog:
-
-#### Option A: From a Local Copy
-```groovy
-dependencyResolutionManagement {
-    versionCatalogs {
-        libs {
-            from(files("path/to/gradle/libs.versions.toml"))
-        }
-    }
+plugins {
+    id("com.nyfaria.moddingtools") version "1.2.0"
 }
 ```
 
-#### Option B: From GitHub (recommended for published catalogs)
+Or `settings.gradle`:
+
 ```groovy
-dependencyResolutionManagement {
-    versionCatalogs {
-        libs {
-            from("com.github.nyfaria:versions-catalog:1.0.0")
-        }
-    }
+plugins {
+    id 'com.nyfaria.moddingtools' version '1.2.0'
 }
 ```
 
-### 2. Use Dependencies in Your Build Scripts
+The plugin reads `minecraft_version` (or `minecraftVersion`) from `gradle.properties` to determine which version catalog to load.
 
-Once configured, you can reference dependencies using type-safe accessors:
+## Features
 
-#### In `build.gradle`:
-```groovy
+### 1. Version Catalog (`nyfs`)
+
+The plugin creates a version catalog named `nyfs` with pre-configured dependencies for your Minecraft version.
+
+**In your build scripts:**
+
+```kotlin
 dependencies {
-    // Reference individual libraries
-    implementation libs.some.library
-    
-    // Reference bundles
-    implementation libs.bundles.common
+    implementation(nyfs.geckolib.neoforge)
+    implementation(nyfs.config.api.fabric)
+    implementation(nyfs.bundles.cc.all)
 }
 
 plugins {
-    // Reference plugins
-    alias(libs.plugins.forge.gradle)
+    alias(nyfs.plugins.mdg)
+    alias(nyfs.plugins.loom)
 }
 ```
 
-#### In `build.gradle.kts`:
-```kotlin
-dependencies {
-    // Reference individual libraries
-    implementation(libs.some.library)
-    
-    // Reference bundles
-    implementation(libs.bundles.common)
-}
+**Available versions** (varies by Minecraft version):
+- `minecraft`, `neoforgeVersion`, `forgeVersion`, `fabric-loader`, `fabric-api`
+- `geckolib`, `config-api`, `commonnetwork`, `sbl`, `dynamictrees`
+- And more...
 
-plugins {
-    // Reference plugins
-    alias(libs.plugins.forge.gradle)
-}
+**Available libraries** (varies by Minecraft version):
+- `geckolib-common`, `geckolib-fabric`, `geckolib-neoforge`, `geckolib-forge`
+- `config-api-common`, `config-api-fabric`, `config-api-neoforge`
+- `sbl-common`, `sbl-fabric`, `sbl-neoforge`, `sbl-forge`
+- `commonnetwork-common`, `commonnetwork-fabric`, `commonnetwork-neoforge`, `commonnetwork-forge`
+- `dynamictrees-fabric`, `dynamictrees-neoforge`, `dynamictrees-forge`
+- And more...
+
+**Available plugins**:
+- `mdg` / `mdg-loader` - NeoForge ModDevGradle
+- `loom` / `loom-loader` - Fabric Loom
+- `regutils` / `regutils-loader` - Registration Utils
+
+### 2. Automatic Repository Configuration
+
+The plugin automatically configures all common modding repositories:
+- Maven Central
+- NeoForged Maven
+- Fabric Maven
+- ParchmentMC Maven
+- GeckoLib Maven
+- SmartBrainLib Maven
+- Modrinth Maven
+- CurseMaven
+- And more...
+
+### 3. Automatic Package Refactoring
+
+When you change `group` or `mod_id` in `gradle.properties`, the plugin **automatically detects** the mismatch and refactors:
+- Java/Kotlin source files (package declarations and imports)
+- Resource directories (`assets/<modid>/`, `data/<modid>/`)
+- Mixin JSON files and references
+- Service files (`META-INF/services/`)
+- `fabric.mod.json` entrypoints
+- And more...
+
+Simply change your `gradle.properties` and sync the project - the plugin handles the rest!
+
+### 4. Manual Refactor Task
+
+For manual control, use the `refactorPackages` task:
+
+```bash
+./gradlew refactorPackages --newGroup=com.example --newModId=mymod
 ```
 
-### 3. Defining Dependencies
+Optional parameters:
+- `--oldGroup` - Specify the old group (auto-detected if not provided)
+- `--oldModId` - Specify the old mod ID (auto-detected if not provided)
 
-Edit `gradle/libs.versions.toml` to add your dependencies:
+### 5. Mod Dependencies Extension
 
-```toml
-[versions]
-minecraft = "1.20.1"
-forge = "47.1.0"
+The `com.nyfaria.moddingtools.dependencies` plugin provides simplified dependency management with automatic metadata modification.
 
-[libraries]
-minecraft-forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
-
-[bundles]
-common = ["minecraft-forge"]
-
-[plugins]
-forge-gradle = { id = "net.minecraftforge.gradle", version = "6.0.+" }
-```
-
-## Documentation
-
-### Mod Dependencies Extension
-
-The plugin provides a `modDependencies` extension for managing mod dependencies with automatic metadata file modification. This extension is automatically applied to projects with names containing "fabric", "neoforge", "forge", or "quilt".
-
-#### Usage
-
-In your loader-specific `build.gradle` (e.g., `fabric/build.gradle` or `neoforge/build.gradle`):
+**In your loader-specific `build.gradle`:**
 
 ```groovy
+plugins {
+    id 'com.nyfaria.moddingtools.dependencies'
+}
+
 modDependencies {
     requiredMod(nyfs.geckolib.fabric)
     optionalMod(nyfs.jei.fabric)
@@ -127,7 +122,15 @@ modDependencies {
 }
 ```
 
-The plugin automatically extracts the modId and version from the dependency. If you need to override them:
+**Methods:**
+
+| Method | Gradle Configuration | fabric.mod.json | neoforge.mods.toml |
+|--------|---------------------|-----------------|-------------------|
+| `requiredMod()` | `modImplementation` / `implementation` | `depends` | `type="required"` |
+| `optionalMod()` | `modCompileOnly` / `compileOnly` | `suggests` | `type="optional"` |
+| `embeddedMod()` | `include` + `modImplementation` / `jarJar` + `implementation` | `depends` | `type="required"` |
+
+**With explicit modId/version:**
 
 ```groovy
 modDependencies {
@@ -136,31 +139,9 @@ modDependencies {
 }
 ```
 
-#### Methods
+**Generated metadata:**
 
-- **`requiredMod(dependency)`** - Adds a required dependency (auto-extracts modId/version)
-- **`requiredMod(modId, version, dependency)`** - Adds a required dependency with explicit modId/version
-  - Adds the dependency to `modImplementation` (Fabric) or `implementation` (NeoForge/Forge)
-  - Adds to `depends` block in `fabric.mod.json`
-  - Adds `type="required"` in `neoforge.mods.toml`
-
-- **`optionalMod(dependency)`** - Adds an optional dependency (auto-extracts modId/version)
-- **`optionalMod(modId, version, dependency)`** - Adds an optional dependency with explicit modId/version
-  - Adds the dependency to `modCompileOnly` (Fabric) or `compileOnly` (NeoForge/Forge)
-  - Adds to `suggests` block in `fabric.mod.json`
-  - Adds `type="optional"` in `neoforge.mods.toml`
-
-- **`embeddedMod(dependency)`** - Adds an embedded/bundled dependency (auto-extracts modId/version)
-- **`embeddedMod(modId, version, dependency)`** - Adds an embedded/bundled dependency with explicit modId/version
-  - Adds the dependency to `include` + `modImplementation` (Fabric) or `jarJar` + `implementation` (NeoForge/Forge)
-  - Adds to `depends` block in `fabric.mod.json`
-  - Adds `type="required"` in `neoforge.mods.toml`
-
-#### Automatic Metadata Modification
-
-The plugin automatically modifies `fabric.mod.json` and `neoforge.mods.toml` at build time (in the output jar only, not the source files):
-
-**Fabric (`fabric.mod.json`):**
+`fabric.mod.json`:
 ```json
 {
   "depends": {
@@ -172,7 +153,7 @@ The plugin automatically modifies `fabric.mod.json` and `neoforge.mods.toml` at 
 }
 ```
 
-**NeoForge/Forge (`neoforge.mods.toml`):**
+`neoforge.mods.toml`:
 ```toml
 [[dependencies.yourmodid]]
 modId="geckolib"
@@ -182,6 +163,41 @@ ordering="NONE"
 side="BOTH"
 ```
 
-For more information on Gradle version catalogs, see:
-- [Official Gradle Documentation](https://docs.gradle.org/current/userguide/version_catalogs.html)
-- [Migrate to Version Catalogs](https://developer.android.com/build/migrate-to-catalogs)
+## Remote Version Updates
+
+The plugin fetches version definitions from GitHub, so you don't need to update the plugin to get new library versions:
+- **Default URL**: `https://raw.githubusercontent.com/Nyfaria/NyfsModdingTools/main/versions`
+- **Cache**: `~/.gradle/caches/nyfs-modding-tools/versions/` (24-hour TTL)
+
+### Custom Versions URL
+
+Host your own version definitions:
+
+```kotlin
+import com.nyfaria.moddingtools.MinecraftVersions
+
+MinecraftVersions.setVersionsUrl("https://raw.githubusercontent.com/YourUser/YourRepo/main/versions")
+```
+
+Set to `null` to reset to default. Your URL should point to a directory containing:
+- `_base.json` - Base version definitions
+- `index.txt` - List of supported Minecraft versions (one per line)
+- `{version}.json` - Version-specific definitions (e.g., `1.21.1.json`)
+
+### Clear Cache
+
+```kotlin
+MinecraftVersions.clearCache()
+```
+
+Or delete `~/.gradle/caches/nyfs-modding-tools/versions/`
+
+## Supported Minecraft Versions
+
+- 1.20.1
+- 1.21.1
+- 1.21.3 - 1.21.11
+
+## Links
+
+- [Gradle Version Catalogs Documentation](https://docs.gradle.org/current/userguide/version_catalogs.html)
